@@ -1,0 +1,10 @@
+build/
+~*
+*~
+*.log
+*.dll
+*.so
+*.class
+*.out
+*.exe
+*.jar
