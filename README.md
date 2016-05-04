@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    compile "vhacd:vhacd-native:1.0"
+    compile "vhacd:vhacd-native:1.0.2"
 }
 
 ```
