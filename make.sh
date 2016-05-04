@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.0.2"
+VERSION="1.1"
 
 mkdir -p build
 mkdir -p build/tests
