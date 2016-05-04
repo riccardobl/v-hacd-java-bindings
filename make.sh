@@ -1,7 +1,6 @@
 #!/bin/bash
-#Requirements wget unzip mvn mingw32 g++ java find
 
-VERSION="1.0"
+VERSION="1.0.1"
 
 mkdir -p build
 mkdir -p build/tests
@@ -39,7 +38,6 @@ function download {
     mkdir build/tmp/ext
     unzip -q build/tmp/vhacd.zip -d  build/tmp/ext
     mv build/tmp/ext/* build/vhacd
-    #patch build/vhacd/src/VHACD_Lib/public/VHACD.h < patches/VHACD.h.patch
 }
 
 function setPlatformArch {
@@ -172,27 +170,6 @@ function buildJavaBindings {
     fi
     clr_green "Build java bindings..."
     mkdir -p build/release
-    #archs=""
-    #if [ -f build/lib/windows/x86/vhacd.dll ];
-    #then
-    #    clr_brown "+ vhacd.dll 32bit"        
-    #    archs="$archs -arch win32 -libFile build/lib/windows/x86/vhacd.dll"    
-    #fi
-    #if [ -f build/lib/windows/x86_64/vhacd.dll ];
-    #then
-    #    clr_brown "+ vhacd.dll 64bit"        
-    #    archs="$archs -arch win64 -libFile build/lib/windows/x86_64/vhacd.dll"    
-    #fi
-    #if [ -f build/lib/linux/x86/libvhacd.so ];
-    #then
-    #    clr_brown "+ libvhacd.so 32bit"        
-    #    archs="$archs -arch linux_x86 -libFile build/lib/linux/x86/libvhacd.so"    
-    #fi
-    #if [ -f build/lib/linux/x86_64/libvhacd.so ];
-    #then
-    #    clr_brown "+ libvhacd.so 64bit"        
-    #    archs="$archs -arch linux_x64 -libFile build/lib/linux/x86_64/libvhacd.so"    
-    #fi
     rm -Rf  build/tmp/libvhacd
     mkdir -p build/tmp/libvhacd
     cp -Rf build/lib/* build/tmp/libvhacd/
@@ -200,7 +177,6 @@ function buildJavaBindings {
     -jar build/jnaerator.jar 
     -mode Directory     
     -runtime JNA      
-    -synchronized
     -sizeAsLong
     -noComments
     -noRawBindings
@@ -211,7 +187,6 @@ function buildJavaBindings {
     -library vhacd
     native/src/VHACDNative.h
 
-    $archs 
     -o build/tmp/libvhacd"
     clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
     $cmd
@@ -226,14 +201,6 @@ function buildJavaBindings {
     then
         clr_green "Download JNA Platform..."
         wget -q http://central.maven.org/maven2/net/java/dev/jna/jna-platform/4.2.2/jna-platform-4.2.2.jar -O build/jna-platform.jar        
-        #wget -q https://github.com/nativelibs4java/BridJ/archive/f221b3650ebe0d74931898dbaa88b5fe18b2d10c.zip -O build/tmp/bridj.zip
-        #mkdir -p build/tmp/bridj-ext
-        #unzip -q build/tmp/bridj.zip -d build/tmp/bridj-ext/      
-        #cd build/tmp/bridj-ext/*/   
-        #clr_green "Build BridJ..."
-        #mvn -DskipTests -q clean install 
-        #cp target/bridj-*-SNAPSHOT.jar ../../../bridj.jar
-        #cd ../../../../
     fi    
     
     if [ ! -f  build/jna.jar    ];
@@ -242,7 +209,6 @@ function buildJavaBindings {
         wget -q http://central.maven.org/maven2/net/java/dev/jna/jna/4.2.2/jna-4.2.2.jar -O build/jna.jar        
     fi    
     
-    #unzip -q build/bridj.jar -d build/tmp/j/
     unzip -q build/jna.jar -d build/tmp/j/
     rm -Rf build/tmp/j/META-INF 
     unzip -q build/jna-platform.jar -d build/tmp/j/
