@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.0.1"
+VERSION="1.0.2"
 
 mkdir -p build
 mkdir -p build/tests
@@ -232,7 +232,7 @@ function buildJavaBindings {
     
     clr_green "Build vhacd-native-$VERSION.jar..."
     find build/tmp/bin -type f -name '*.java' > build/tmp/java-src.txt
-    cmd="`which javac` -Xlint:none -cp build/tmp/bin @build/tmp/java-src.txt"
+    cmd="`which javac` -source 1.7 -target 1.7 -Xlint:none -cp build/tmp/bin @build/tmp/java-src.txt"
     clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
     $cmd
     find build/tmp/bin -type f -name '*.java' -delete
@@ -256,7 +256,7 @@ function buildJavaBindings {
         cp $i/* build/tmp/jt -Rf        
         cp build/tmp/bin/* build/tmp/jt -Rf
         find  build/tmp/jt -type f -name '*.java' > build/tmp/java-src.txt
-        cmd="`which javac` -Xlint:none -cp build/tmp/jt @build/tmp/java-src.txt"
+        cmd="`which javac` -source 1.7 -target 1.7  -Xlint:none -cp build/tmp/jt @build/tmp/java-src.txt"
         clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
         $cmd
         
