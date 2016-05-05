@@ -22,6 +22,49 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <algorithm>
 using namespace std;
 
+/* 
+ * public domain strtok_r() by Charlie Gordon
+ *
+ *   from comp.lang.c  9/14/2007
+ *
+ *      http://groups.google.com/group/comp.lang.c/msg/2ab1ecbb86646684
+ *
+ *     (Declaration that it's public domain):
+ *      http://groups.google.com/group/comp.lang.c/msg/7c7b39328fefab9c
+ */
+
+char* strtok_r2(
+    char *str, 
+    const char *delim, 
+    char **nextp)
+{
+    char *ret;
+
+    if (str == NULL)
+    {
+        str = *nextp;
+    }
+
+    str += strspn(str, delim);
+
+    if (*str == '\0')
+    {
+        return NULL;
+    }
+
+    ret = str;
+
+    str += strcspn(str, delim);
+
+    if (*str)
+    {
+        *str++ = '\0';
+    }
+
+    *nextp = str;
+
+    return ret;
+}
 
 bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangles)
 {
@@ -42,7 +85,8 @@ bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangl
                 if (buffer[1] == ' ') {
                     str = buffer + 2;
                     for (int k = 0; k < 3; ++k) {
-                        pch = strtok(str, " ");
+                        char *s;
+                        pch = strtok_r2(str, " ",&s);
                         if (pch)
                             x[k] = (float)atof(pch);
                         else {
@@ -65,7 +109,7 @@ bool LoadOBJ(const string& fileName, vector<float>& points, vector<int>& triangl
                     pch = strtok(str, " ");                  
                     if (pch) {
                         char *x;
-                        char *spch=strtok_r(pch, "/", &x);
+                        char *spch=strtok_r2(pch, "/", &x);
                         if(spch){
                             int r=atoi(spch)-1;
                             ip[k++] = r ;

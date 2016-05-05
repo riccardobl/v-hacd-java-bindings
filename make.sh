@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VERSION="1.1"
-
+DEPLOY="false"
 mkdir -p build
 mkdir -p build/tests
 rm -Rf build/tests/resources
@@ -43,7 +43,11 @@ function download {
 function setPlatformArch {
     PLATFORM=$1
     ARCH=$2
-    OUT_PATH="$PWD/build/lib/$PLATFORM-$ARCH"
+    if [ "$ARCH" = "" ]; then
+      OUT_PATH="$PWD/build/lib/$PLATFORM"
+    else
+        OUT_PATH="$PWD/build/lib/$PLATFORM-$ARCH"
+    fi
     mkdir -p $OUT_PATH
 }
 
@@ -72,10 +76,10 @@ function buildLinux {
       -Inative/src -pthread 
        build/vhacd/src/VHACD_Lib/src/*.cpp
        native/src/*.cpp
-       -Wl,-soname,vhacd.so -o $OUT_PATH/libvhacd.so "
+       -Wl,-soname,vhacd.so -o $OUT_PATH/libvhacd.so  -lrt"
     clr_escape "$(echo $build_script)" $CLR_BOLD $CLR_BLUE
     $build_script
-    
+    if [ $? -ne 0 ]; then exit 1; fi
 
     clr_green "Compile Tests for $PLATFORM $ARCH..."
     tests=($(ls -d native/tests/*))
@@ -91,13 +95,14 @@ function buildLinux {
         -Ibuild/vhacd/src/VHACD_Lib/public
         -Inative/src -pthread -fPIC
         -Inative/tests/commons/
-        -I$i 
-        -o build/tests/$ex_name 
+        -I$i -Wl,--as-needed 
         build/vhacd/src/VHACD_Lib/src/*.cpp 
         native/src/*.cpp 
-        $i/*.cpp"
+        $i/*.cpp 
+        -o build/tests/$ex_name -lrt " 
         clr_escape "$(echo $build_script)" $CLR_BOLD $CLR_BLUE
         $build_script
+        if [ $? -ne 0 ]; then exit 1; fi
     done
 }
 
@@ -121,6 +126,7 @@ function buildWindows {
        -Wl,-soname,vhacd.dll  -o $OUT_PATH/vhacd.dll"
     clr_escape "$(echo $build_script)" $CLR_BOLD $CLR_BLUE
     $build_script
+    if [ $? -ne 0 ]; then exit 1; fi
 
     
     clr_green "Compile Tests for $PLATFORM $ARCH..."
@@ -134,15 +140,16 @@ function buildWindows {
         build_script="$compiler  -fpermissive   -DWIN32
         -Ibuild/vhacd/src/VHACD_Lib/inc
         -Ibuild/vhacd/src/VHACD_Lib/public
-        -Inative/src        
+        -Inative/src      
         -Inative/tests/commons/
-        -I$i  -static -Wp,-w 
-        -o build/tests/$ex_name
+        -I$i  -static -Wp,-w -Wl,--as-needed 
         build/vhacd/src/VHACD_Lib/src/*.cpp 
         native/src/*.cpp 
-        $i/*.cpp"
+        $i/*.cpp
+         -o build/tests/$ex_name"
         clr_escape "$(echo $build_script)" $CLR_BOLD $CLR_BLUE
         $build_script
+        if [ $? -ne 0 ]; then exit 1; fi
     done
 }
 
@@ -190,6 +197,7 @@ function buildJavaBindings {
     -o build/tmp/libvhacd"
     clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
     $cmd
+    if [ $? -ne 0 ]; then exit 1; fi
   
     rm -f build/release/vhacd-native.jar 
  
@@ -229,12 +237,15 @@ function buildJavaBindings {
     "
     clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
     $cmd
+    if [ $? -ne 0 ]; then exit 1; fi
     
     clr_green "Build vhacd-native-$VERSION.jar..."
     find build/tmp/bin -type f -name '*.java' > build/tmp/java-src.txt
     cmd="`which javac` -source 1.7 -target 1.7 -Xlint:none -cp build/tmp/bin @build/tmp/java-src.txt"
     clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
     $cmd
+    if [ $? -ne 0 ]; then exit 1; fi
+    
     find build/tmp/bin -type f -name '*.java' -delete
     cmd="`which jar`
     cf
@@ -243,6 +254,7 @@ function buildJavaBindings {
     "
     clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
     $cmd
+    if [ $? -ne 0 ]; then exit 1; fi
 
     clr_green "Compile Tests for java..."
     tests=($(ls -d java/tests/*))
@@ -253,12 +265,13 @@ function buildJavaBindings {
          clr_brown "+ $ex_name"
         rm -Rf build/tmp/jt
         mkdir -p build/tmp/jt
-        cp $i/* build/tmp/jt -Rf        
-        cp build/tmp/bin/* build/tmp/jt -Rf
+        cp -Rf  $i/* build/tmp/jt        
+        cp -Rf  build/tmp/bin/* build/tmp/jt 
         find  build/tmp/jt -type f -name '*.java' > build/tmp/java-src.txt
         cmd="`which javac` -source 1.7 -target 1.7  -Xlint:none -cp build/tmp/jt @build/tmp/java-src.txt"
         clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
         $cmd
+        if [ $? -ne 0 ]; then exit 1; fi
         
         cmd="`which jar`
         cf
@@ -267,9 +280,153 @@ function buildJavaBindings {
         "
         clr_escape "$(echo $cmd)" $CLR_BOLD $CLR_BLUE
         $cmd
+        if [ $? -ne 0 ]; then exit 1; fi
     done
 
 }
+
+function buildMac {
+    downloadIfRequired
+    setPlatformArch "darwin" ""
+    clr_green "Compile for $PLATFORM..."
+    build_script="
+    g++ -mtune=generic -fpermissive -U_FORTIFY_SOURCE -fPIC -O3  -shared
+      -Ibuild/vhacd/src/VHACD_Lib/inc 
+      -Ibuild/vhacd/src/VHACD_Lib/public
+      -Inative/src
+       build/vhacd/src/VHACD_Lib/src/*.cpp
+       native/src/*.cpp
+        -o $OUT_PATH/libvhacd.dylib"
+    clr_escape "$(echo $build_script)" $CLR_BOLD $CLR_BLUE
+    $build_script
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    clr_green "Compile Tests for $PLATFORM $ARCH..."
+    tests=($(ls -d native/tests/*))
+    for i in "${tests[@]}"
+    do 
+        name=`basename $i`
+        
+    
+        ex_name="$name.$PLATFORM"
+        clr_brown "+ $ex_name"
+        build_script="g++  -fpermissive
+        -Ibuild/vhacd/src/VHACD_Lib/inc
+        -Ibuild/vhacd/src/VHACD_Lib/public
+        -Inative/src -fPIC
+        -Inative/tests/commons/
+        -I$i 
+        build/vhacd/src/VHACD_Lib/src/*.cpp 
+        native/src/*.cpp 
+        $i/*.cpp 
+        -o build/tests/$ex_name" 
+        clr_escape "$(echo $build_script)" $CLR_BOLD $CLR_BLUE
+        $build_script
+        if [ $? -ne 0 ]; then exit 1; fi
+    done
+}
+
+function travis {
+    DEPLOY="true"
+    VERSION=$TRAVIS_COMMIT
+    if [ "$TRAVIS_TAG" != "" ];
+    then
+        echo "Deploy for $TRAVIS_TAG."
+        VERSION=$TRAVIS_TAG
+        DEPLOY="true"    
+    fi
+
+    echo "Run travis $1"
+    if [ "$1" = "deploy" ];
+    then
+        if [ "$DEPLOY" != "true" ];
+        then
+            exit 0
+        fi  
+          
+        rm -Rf deploy
+        mkdir -p deploy/
+        
+        out=`curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent --head --write-out '%{http_code}'  -o deploy/tmpl.tar.gz.h  https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-winLinux-$VERSION.tar.gz`
+        if [ "$out" != "200" ];
+        then
+            echo "[warning] Windows and Linux libs not found. Skip deploy."
+            exit 0
+        fi
+        
+        out=`curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent --head --write-out '%{http_code}'  -o deploy/tmpm.tar.gz.h https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-mac-$VERSION.tar.gz`
+        if [ "$out" != "200" ];
+        then
+            echo "[warning] Mac libs not found. Skip deploy."
+            exit 0
+        fi
+        
+        curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent  -o deploy/tmpl.tar.gz https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-winLinux-$VERSION.tar.gz   
+       
+        curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent  -o deploy/tmpm.tar.gz https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-mac-$VERSION.tar.gz
+      
+        echo "Deploy!"
+    
+        rm -Rf buid/tests/
+        mkdir -p build/tests
+        mkdir -p build/lib/        
+
+        tar -xzf deploy/tmpl.tar.gz -C build/lib/
+        tar -xzf deploy/tmpm.tar.gz -C build/lib/
+        
+        buildJavaBindings
+        
+        curl -X PUT  -T  build/release/vhacd-native-$VERSION.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
+        "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
+        
+        curl -X PUT  -T  build/release/vhacd-native-$VERSION-sources.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
+        "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
+       
+        tar -czf deploy/tests-java-$VERSION.tar.gz build/tests/*
+        curl -X PUT  -T  deploy/tests-java-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
+        "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
+        
+    else
+        if [ "$TRAVIS_OS_NAME" = "linux" ];
+        then
+            buildLinux32 
+            buildLinux64  
+            buildWindows32
+            buildWindows64
+            
+            if [ "$DEPLOY" = "true" ];
+            then           
+                mkdir -p deploy/
+                tar -C build/lib/ -czf deploy/libs-winLinux-$VERSION.tar.gz .
+                tar -C build/tests/ -czf deploy/tests-winLinux-$VERSION.tar.gz .
+                curl -X PUT  -T  deploy/libs-winLinux-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
+                "https://api.bintray.com/content/riccardo/vhacd-natives-files/libs/$VERSION/$VERSION/"
+                curl -X PUT  -T  deploy/tests-winLinux-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
+                "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
+           else
+                buildJavaBindings
+           fi 
+        fi
+        if [ "$TRAVIS_OS_NAME" = "osx" ];
+        then
+            buildMac
+            if [ "$DEPLOY" = "true" ];
+            then    
+                mkdir -p deploy/
+                tar -C build/lib/ -czf deploy/libs-mac-$VERSION.tar.gz .
+                tar -C build/tests/ -czf deploy/tests-mac-$VERSION.tar.gz .
+                curl -X PUT  -T  deploy/libs-mac-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
+                "https://api.bintray.com/content/riccardo/vhacd-natives-files/libs/$VERSION/$VERSION/"
+                curl -X PUT  -T  deploy/tests-mac-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
+                "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
+            else
+                buildJavaBindings
+            fi 
+        fi
+    fi
+}
+
+
 
 function buildAll {
     buildLinux32 
@@ -282,10 +439,10 @@ function buildAll {
 cleanTMP
 if [ "$1" = "" ];
 then
-    echo "Usage: compile.sh target"
+    echo "Usage: make.sh target"
     echo " - Targets: buildAll,buildWindows32,buildWindows64,buildLinux32,buildLinux64,buildJavaBindings,clean"
     exit 0
 fi
 clr_magenta "Run $1..."
-$1
+$1 ${*:2}
 clr_magenta "Build complete, results are stored in $PWD/build/"

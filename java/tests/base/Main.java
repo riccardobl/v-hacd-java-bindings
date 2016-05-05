@@ -72,7 +72,7 @@ public class Main{
 	public static void main(String[] args) throws Exception {
 		Collection<Float> positions=new LinkedList<Float>();
 		Collection<Integer> indexes=new LinkedList<Integer>();
-		loadOBJ("/DEV/TestData/assets/models/wasp/wasp.obj",positions,indexes);
+		loadOBJ("resources/wasp.obj",positions,indexes);
 
 		float fpositions[]=new float[positions.size()];
 		int iindexes[]=new int[indexes.size()];
