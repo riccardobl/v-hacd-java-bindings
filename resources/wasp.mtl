@@ -1,3 +1,12 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:841e999a417c2abbbff35f039ab37091e0e921e66f5667c55e0fa04f33305200
-size 230
+# Blender MTL File: 'wasp.blend'
+# Material Count: 1
+
+newmtl Clay
+Ns 15.686275
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 0.922254 0.962376
+Ks 0.274648 0.274648 0.274648
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
