@@ -1,9 +1,6 @@
 sudo: required
 language: java
 dist: mega
-cache:
-  directories:
-  - $HOME/.cache/$TRAVIS_COMMIT
 os:
 - linux
 - osx
