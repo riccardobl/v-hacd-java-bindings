@@ -393,7 +393,7 @@ function travis {
             buildLinux64  
             buildWindows32
             buildWindows64
-            
+            ./build/tests/base.linux.x86-64
             if [ "$DEPLOY" = "true" ];
             then           
                 mkdir -p deploy/
@@ -410,6 +410,7 @@ function travis {
         if [ "$TRAVIS_OS_NAME" = "osx" ];
         then
             buildMac
+            ./build/tests/base.darwin
             if [ "$DEPLOY" = "true" ];
             then    
                 mkdir -p deploy/
