@@ -1,6 +1,7 @@
 #V-HACD Java Bindings
 Java bindings for [V-HACD](https://github.com/kmammou/v-hacd)
 
+[![Build Status](https://travis-ci.org/riccardobl/v-hacd-java-bindings.svg?branch=master)](https://travis-ci.org/riccardobl/v-hacd-java-bindings)
 
 ##Build 
 ###Dependencies
