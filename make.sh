@@ -327,7 +327,7 @@ function buildMac {
 }
 
 function travis {
-    DEPLOY="true"
+    DEPLOY="false"
     VERSION=$TRAVIS_COMMIT
     if [ "$TRAVIS_TAG" != "" ];
     then
