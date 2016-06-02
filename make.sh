@@ -375,6 +375,7 @@ function travis {
         tar -xzf deploy/tmpm.tar.gz -C build/lib/
         
         buildJavaBindings
+        `which java` -cp ./build/tests/base.jar Main
         
         curl -X PUT  -T  build/release/vhacd-native-$VERSION.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
         "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
@@ -405,6 +406,7 @@ function travis {
                 "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
            else
                 buildJavaBindings
+                `which java` -cp ./build/tests/base.jar Main
            fi 
         fi
         if [ "$TRAVIS_OS_NAME" = "osx" ];
@@ -422,6 +424,7 @@ function travis {
                 "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
             else
                 buildJavaBindings
+                `which java` -cp ./build/tests/base.jar Main
             fi 
         fi
     fi
