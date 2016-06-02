@@ -4,9 +4,6 @@ dist: mega
 os:
 - linux
 - osx
-branches:
-  only:
-  - master
 notifications:
   email: true
 script:
