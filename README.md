@@ -1,13 +1,13 @@
-#V-HACD Java Bindings
+# V-HACD Java Bindings
 Java bindings for [V-HACD](https://github.com/kmammou/v-hacd)
 
 [![Build Status](https://travis-ci.org/riccardobl/v-hacd-java-bindings.svg?branch=master)](https://travis-ci.org/riccardobl/v-hacd-java-bindings)
 
-##Build 
-###Dependencies
+## Build 
+### Dependencies
 See .travis.yml 
 ___
-###Build natives for linux and windows
+### Build natives for linux and windows
 From a linux installation launch:
 ```
 ./make.sh buildLinux32
@@ -16,19 +16,19 @@ From a linux installation launch:
 ./make.sh buildWindows64
 ```
 ___
-###Build natives for osx
+### Build natives for osx
 From an osx installation launch:
 ```
 ./make.sh buildMac
 ```
 ___
-###Build java bindings 
+### Build java bindings 
 From an osx or linux installation launch:
 ```
 ./make.sh buildJavaBindings
 ```
 ___
-###Build with travis
+### Build with travis
 From an osx or linux instance launch:
 ```
 ./make.sh travis build
@@ -37,7 +37,7 @@ From an osx or linux instance launch:
 
 Results are stored in: `build/tests` and `build/release`
 
-##Gradle
+## Gradle
 ```
 repositories { 
     maven { 
