@@ -10,7 +10,7 @@ script:
 - ./make.sh travis build
 before_install:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq update ; fi
-- if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y wget unzip maven2 ".*-mingw-w64-.*" libgd-dev libgd-dev:i386 build-essential gcc-multilib g++-multilib ;fi
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y wget unzip maven2 ".*-mingw-w64-.*" libgd2-xpm-dev build-essential gcc-multilib g++-multilib ;fi
 - "if [ \"$TRAVIS_OS_NAME\" = \"linux\" ]; then curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash ;fi"
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y git-lfs ;fi
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then  brew update  ;fi
