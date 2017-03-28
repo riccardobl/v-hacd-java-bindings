@@ -10,13 +10,12 @@ script:
 - ./make.sh travis build
 before_install:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get -qq update ; fi
-- if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y wget unzip maven2 ".*-mingw-w64-.*" libgd2-xpm:i386 libgd2-xpm ia32-libs-multiarch ia32-libs build-essential gcc-multilib g++-multilib ;fi
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y wget unzip maven2 ".*-mingw-w64-.*" libgd2-xpm:i386 libgd2-xpm ia32-libs-multiarch build-essential gcc-multilib g++-multilib ;fi
 - "if [ \"$TRAVIS_OS_NAME\" = \"linux\" ]; then curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash ;fi"
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install -y git-lfs ;fi
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then  brew update  ;fi
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then  brew tap caskroom/cask ; fi
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then  brew install git-lfs ; fi
-- if [ "$TRAVIS_OS_NAME" = "osx" ]; then  brew install brew-cask ; fi
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then  brew cask install java ; fi
 - git lfs install
 after_success:
