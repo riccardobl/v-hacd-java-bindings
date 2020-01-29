@@ -283,6 +283,23 @@ function buildJavaBindings {
         if [ $? -ne 0 ]; then exit 1; fi
     done
 
+
+    echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<project
+  xmlns=\"http://maven.apache.org/POM/4.0.0\"
+  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+  xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd\">
+
+  <modelVersion>4.0.0</modelVersion>
+      <groupId>vhacd</groupId>
+    <artifactId>vhacd-native</artifactId>
+    <version>$VERSION</version>
+
+  <name>$NAME</name>
+  <description></description>
+  <url></url>
+</project> "  > build/release/vhacd-native-$VERSION.pom  
+
 }
 
 function buildMac {
@@ -378,6 +395,9 @@ function travis {
         `which java` -cp ./build/tests/base.jar Main
         
         curl -X PUT  -T  build/release/vhacd-native-$VERSION.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
+        "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
+
+        curl -X PUT  -T  build/release/vhacd-native-$VERSION.pom -u$BINTRAY_USER:$BINTRAY_API_KEY\
         "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
         
         curl -X PUT  -T  build/release/vhacd-native-$VERSION-sources.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
