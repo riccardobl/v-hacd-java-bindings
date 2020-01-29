@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -o xtrace
 
 VERSION="1.1"
 DEPLOY="false"
@@ -171,7 +173,7 @@ function buildJavaBindings {
         unzip -q build/tmp/jnaerator.zip -d build/tmp/jnaerator-ext/      
         cd build/tmp/jnaerator-ext/*/   
         clr_green "Build jnaerator..."
-        mvn -DskipTests -q clean install 
+        mvn -DskipTests -q clean install  -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
         cp jnaerator/target/jnaerator-*-shaded.jar ../../../jnaerator.jar
         cd ../../../../
     fi
@@ -208,13 +210,13 @@ function buildJavaBindings {
     if [ ! -f  build/jna-platform.jar    ];
     then
         clr_green "Download JNA Platform..."
-        wget -q http://central.maven.org/maven2/net/java/dev/jna/jna-platform/4.2.2/jna-platform-4.2.2.jar -O build/jna-platform.jar        
+        wget -q https://repo1.maven.org/maven2/net/java/dev/jna/jna-platform/4.2.2/jna-platform-4.2.2.jar -O build/jna-platform.jar        
     fi    
     
     if [ ! -f  build/jna.jar    ];
     then
         clr_green "Download JNA..."
-        wget -q http://central.maven.org/maven2/net/java/dev/jna/jna/4.2.2/jna-4.2.2.jar -O build/jna.jar        
+        wget -q https://repo1.maven.org/maven2/net/java/dev/jna/jna/4.2.2/jna-4.2.2.jar -O build/jna.jar        
     fi    
     
     unzip -q build/jna.jar -d build/tmp/j/
@@ -295,8 +297,8 @@ function buildJavaBindings {
     <artifactId>vhacd-native</artifactId>
     <version>$VERSION</version>
 
-  <name>$NAME</name>
-  <description></description>
+  <name>vhacd-native</name>
+  <description>Native bindings for vhacd</description>
   <url></url>
 </project> "  > build/release/vhacd-native-$VERSION.pom  
 
@@ -343,7 +345,16 @@ function buildMac {
     done
 }
 
-function travis {
+
+function ghactions {
+    echo "Configure for github actions"
+    if [[ $GITHUB_REF == refs\/tags* ]]; 
+    then 
+        export TRAVIS_TAG="${GITHUB_REF//refs\/tags\//}"
+    fi
+    export TRAVIS_COMMIT="${GITHUB_SHA}"
+    export TRAVIS_OS_NAME="$OS_NAME"
+
     DEPLOY="false"
     VERSION=$TRAVIS_COMMIT
     if [ "$TRAVIS_TAG" != "" ];
@@ -353,7 +364,7 @@ function travis {
         DEPLOY="true"    
     fi
 
-    echo "Run travis $1"
+    echo "Run ghactions $1"
     if [ "$1" = "deploy" ];
     then
         if [ "$DEPLOY" != "true" ];
@@ -467,6 +478,6 @@ then
     echo " - Targets: buildAll,buildWindows32,buildWindows64,buildLinux32,buildLinux64,buildJavaBindings,clean"
     exit 0
 fi
-clr_magenta "Run $1..."
-$1 ${*:2}
+clr_magenta "Run $@..."
+$@
 clr_magenta "Build complete, results are stored in $PWD/build/"

@@ -1,0 +1,67 @@
+name: Build v-hacd bindings
+on:
+  push:
+    branches:
+  pull_request:
+  release:
+    types: [published]
+  
+jobs:
+  BuildMac:
+    name: Build vhacd for mac
+    runs-on: macos-latest
+
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v1     
+        with:
+          fetch-depth: 1
+
+      - name: Build        
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+        run:  OS_NAME="osx" ./make.sh ghactions build
+
+
+
+  BuildLinux:
+    name: Build vhacd for linux
+    runs-on: ubuntu-latest
+    container:
+      image: riccardoblb/buildenvs:javacross
+   
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v1     
+        with:
+          fetch-depth: 1
+      
+      - name: Prepare
+        run: apt-get install -y   g++-multilib
+
+      - name: Build        
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+        run:   OS_NAME="linux" ./make.sh ghactions build
+
+
+
+  Deploy:
+    name: Deploy vhacd 
+    needs: [BuildLinux,BuildMac]
+    runs-on: ubuntu-latest
+     
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v1     
+        with:
+          fetch-depth: 1
+
+
+      - name: Deploy        
+        env: 
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+        run: OS_NAME="linux" ./make.sh ghactions deploy

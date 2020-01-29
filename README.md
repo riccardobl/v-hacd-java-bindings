@@ -1,7 +1,7 @@
 # V-HACD Java Bindings
 Java bindings for [V-HACD](https://github.com/kmammou/v-hacd)
 
-[![Build Status](https://travis-ci.org/riccardobl/v-hacd-java-bindings.svg?branch=master)](https://travis-ci.org/riccardobl/v-hacd-java-bindings)
+![Build v-hacd bindings](https://github.com/riccardobl/v-hacd-java-bindings/workflows/Build%20v-hacd%20bindings/badge.svg)
 
 ## Build 
 ### Dependencies
@@ -28,10 +28,10 @@ From an osx or linux installation launch:
 ./make.sh buildJavaBindings
 ```
 ___
-### Build with travis
-From an osx or linux instance launch:
+### Build with github actions
+From a mac or linux instance launch:
 ```
-./make.sh travis build
+./make.sh ghactions build
 ```
 
 
