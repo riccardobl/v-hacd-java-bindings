@@ -2,7 +2,18 @@
 set -e
 set -o xtrace
 
-VERSION="1.1"
+if [ "$VERSION" = "" -a "$GITHUB_REF" != "" ];
+then
+    export VERSION="`if [[ $GITHUB_REF == refs\/tags* ]]; then echo ${GITHUB_REF//refs\/tags\//}; fi`"
+    if [ "$VERSION" = "" ];
+    then
+        branch="${GITHUB_REF//refs\/heads\//}"
+        export VERSION="$branch-SNAPSHOT"
+    fi
+else
+    VERSION="1.1"
+fi
+
 DEPLOY="false"
 mkdir -p build
 mkdir -p build/tests
@@ -346,123 +357,6 @@ function buildMac {
 }
 
 
-function ghactions {
-    echo "Configure for github actions"
-    if [[ $GITHUB_REF == refs\/tags* ]]; 
-    then 
-        export TRAVIS_TAG="${GITHUB_REF//refs\/tags\//}"
-    fi
-    export TRAVIS_COMMIT="${GITHUB_SHA}"
-    export TRAVIS_OS_NAME="$OS_NAME"
-
-    DEPLOY="false"
-    VERSION=$TRAVIS_COMMIT
-    if [ "$TRAVIS_TAG" != "" ];
-    then
-        echo "Deploy for $TRAVIS_TAG."
-        VERSION=$TRAVIS_TAG
-        DEPLOY="true"    
-    fi
-
-    echo "Run ghactions $1"
-    if [ "$1" = "deploy" ];
-    then
-        if [ "$DEPLOY" != "true" ];
-        then
-            exit 0
-        fi  
-          
-        rm -Rf deploy
-        mkdir -p deploy/
-        
-        out=`curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent --head --write-out '%{http_code}'  -o deploy/tmpl.tar.gz.h  https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-winLinux-$VERSION.tar.gz`
-        if [ "$out" != "200" ];
-        then
-            echo "[warning] Windows and Linux libs not found. Skip deploy."
-            exit 0
-        fi
-        
-        out=`curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent --head --write-out '%{http_code}'  -o deploy/tmpm.tar.gz.h https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-mac-$VERSION.tar.gz`
-        if [ "$out" != "200" ];
-        then
-            echo "[warning] Mac libs not found. Skip deploy."
-            exit 0
-        fi
-        
-        curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent  -o deploy/tmpl.tar.gz https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-winLinux-$VERSION.tar.gz   
-       
-        curl -u$BINTRAY_USER:$BINTRAY_API_KEY --silent  -o deploy/tmpm.tar.gz https://dl.bintray.com/riccardo/vhacd-natives-files/$VERSION/libs-mac-$VERSION.tar.gz
-      
-        echo "Deploy!"
-    
-        rm -Rf buid/tests/
-        mkdir -p build/tests
-        mkdir -p build/lib/        
-
-        tar -xzf deploy/tmpl.tar.gz -C build/lib/
-        tar -xzf deploy/tmpm.tar.gz -C build/lib/
-        
-        buildJavaBindings
-        `which java` -cp ./build/tests/base.jar Main
-        
-        curl -X PUT  -T  build/release/vhacd-native-$VERSION.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
-        "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
-
-        curl -X PUT  -T  build/release/vhacd-native-$VERSION.pom -u$BINTRAY_USER:$BINTRAY_API_KEY\
-        "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
-        
-        curl -X PUT  -T  build/release/vhacd-native-$VERSION-sources.jar -u$BINTRAY_USER:$BINTRAY_API_KEY\
-        "https://api.bintray.com/content/riccardo/v-hacd/v-hacd-java-bindings/$VERSION/vhacd/vhacd-native/$VERSION/"
-       
-        tar -czf deploy/tests-java-$VERSION.tar.gz build/tests/*
-        curl -X PUT  -T  deploy/tests-java-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
-        "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
-        
-    else
-        if [ "$TRAVIS_OS_NAME" = "linux" ];
-        then
-            buildLinux32 
-            buildLinux64  
-            buildWindows32
-            buildWindows64
-            ./build/tests/base.linux.x86-64
-            if [ "$DEPLOY" = "true" ];
-            then           
-                mkdir -p deploy/
-                tar -C build/lib/ -czf deploy/libs-winLinux-$VERSION.tar.gz .
-                tar -C build/tests/ -czf deploy/tests-winLinux-$VERSION.tar.gz .
-                curl -X PUT  -T  deploy/libs-winLinux-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
-                "https://api.bintray.com/content/riccardo/vhacd-natives-files/libs/$VERSION/$VERSION/"
-                curl -X PUT  -T  deploy/tests-winLinux-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
-                "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
-           else
-                buildJavaBindings
-                `which java` -cp ./build/tests/base.jar Main
-           fi 
-        fi
-        if [ "$TRAVIS_OS_NAME" = "osx" ];
-        then
-            buildMac
-            ./build/tests/base.darwin
-            if [ "$DEPLOY" = "true" ];
-            then    
-                mkdir -p deploy/
-                tar -C build/lib/ -czf deploy/libs-mac-$VERSION.tar.gz .
-                tar -C build/tests/ -czf deploy/tests-mac-$VERSION.tar.gz .
-                curl -X PUT  -T  deploy/libs-mac-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
-                "https://api.bintray.com/content/riccardo/vhacd-natives-files/libs/$VERSION/$VERSION/"
-                curl -X PUT  -T  deploy/tests-mac-$VERSION.tar.gz -u$BINTRAY_USER:$BINTRAY_API_KEY\
-                "https://api.bintray.com/content/riccardo/vhacd-natives-files/tests/$VERSION/$VERSION/"
-            else
-                buildJavaBindings
-                `which java` -cp ./build/tests/base.jar Main
-            fi 
-        fi
-    fi
-}
-
-
-
 function buildAll {
     buildLinux32 
     buildLinux64  
@@ -476,8 +370,8 @@ if [ "$1" = "" ];
 then
     echo "Usage: make.sh target"
     echo " - Targets: buildAll,buildWindows32,buildWindows64,buildLinux32,buildLinux64,buildJavaBindings,clean"
-    exit 0
+else 
+    clr_magenta "Run $@..."
+    $@
+    clr_magenta "Build complete, results are stored in $PWD/build/"
 fi
-clr_magenta "Run $@..."
-$@
-clr_magenta "Build complete, results are stored in $PWD/build/"

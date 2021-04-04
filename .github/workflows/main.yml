@@ -17,16 +17,28 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Build        
-        env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
-        run:  OS_NAME="osx" ./make.sh ghactions build
+      - name: Build    
+        run: |
+          ./make.sh buildMac
+          ./build/tests/base.darwin
+          mkdir -p deploy/
+          tar -C build/lib/ -czf deploy/libs-mac.tar.gz .
+          tar -C build/tests/ -czf deploy/tests-mac.tar.gz .
 
+      - name: Upload libs
+        uses: actions/upload-artifact@v2
+        with:
+          name: libs-mac
+          path: deploy/libs-mac.tar.gz
 
+      - name: Upload tests
+        uses: actions/upload-artifact@v2
+        with:
+          name: tests-mac
+          path: deploy/tests-mac.tar.gz
 
-  BuildLinux:
-    name: Build vhacd for linux
+  BuildLinuxWindows:
+    name: Build vhacd for linux and Windows
     runs-on: ubuntu-latest
     container:
       image: riccardoblb/buildenvs:javacross
@@ -40,17 +52,32 @@ jobs:
       - name: Prepare
         run: apt-get install -y   g++-multilib
 
-      - name: Build        
-        env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
-        run:   OS_NAME="linux" ./make.sh ghactions build
+      - name: Build   
+        run: |
+          ./make.sh buildLinux32
+          ./make.sh buildLinux64
+          ./make.sh buildWindows32
+          ./make.sh buildWindows64
+          ./build/tests/base.linux.x86-64
+          mkdir -p deploy/
+          tar -C build/lib/ -czf deploy/libs-winLinux.tar.gz .
+          tar -C build/tests/ -czf deploy/tests-winLinux.tar.gz .
 
+      - name: Upload libs
+        uses: actions/upload-artifact@v2
+        with:
+          name: libs-winLinux
+          path: deploy/libs-winLinux.tar.gz
 
+      - name: Upload tests
+        uses: actions/upload-artifact@v2
+        with:
+          name: tests-winLinux
+          path: deploy/tests-winLinux.tar.gz
 
-  Deploy:
-    name: Deploy vhacd 
-    needs: [BuildLinux,BuildMac]
+  Release:
+    name: Build release 
+    needs: [BuildLinuxWindows,BuildMac]
     runs-on: ubuntu-latest
      
     steps:
@@ -59,9 +86,75 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Prepare java
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8' # The JDK version to make available on the path.
+          java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
+          architecture: x64 # (x64 or x86) - defaults to x64
 
-      - name: Deploy        
-        env: 
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
-        run: OS_NAME="linux" ./make.sh ghactions deploy
+      - name: Download linux and windows libs
+        uses: actions/download-artifact@v2
+        with:
+          name: libs-winLinux
+          path: deploy/
+
+      - name: Download mac libs
+        uses: actions/download-artifact@v2
+        with:
+          name: libs-mac
+          path: deploy/
+
+      - name: Build java binds
+        run: |
+
+          mkdir -p build/lib/        
+
+          tar -xzf deploy/libs-winLinux.tar.gz -C build/lib/
+          tar -xzf deploy/libs-mac.tar.gz -C build/lib/
+          
+          ./make.sh buildJavaBindings
+          `which java` -cp ./build/tests/base.jar Main
+
+      - name: Upload release
+        uses: actions/upload-artifact@v2
+        with:
+          name: release
+          path: build/release
+
+  Deploy:
+    name: Deploy
+    needs: [Release]
+    runs-on: ubuntu-latest
+     
+    steps:
+      - name: Clone the repo
+        uses: actions/checkout@v1     
+        with:
+          fetch-depth: 1
+
+      - name: Download release
+        uses: actions/download-artifact@v2
+        with:
+          name: release
+          path: build/release
+
+      - name: Deploy to github registry     
+        if: github.event_name == 'release'  
+        run: |        
+            source make.sh
+            mkdir -p deploy/vhacd/vhacd-native/$VERSION
+            mv build/release/*  deploy/vhacd/vhacd-native/$VERSION
+            cd deploy/
+            set -e     
+            files="`find . \( -name "*.jar" -o -name "*.pom" \) -type f -print`"
+            set -f
+            for art in $files; do
+                file="${art:2}"
+                dest="https://maven.pkg.github.com/$GITHUB_REPOSITORY/$file" 
+                echo "Upload $file to $dest"
+                curl -X PUT  $dest -H "Authorization: token  ${{ secrets.GITHUB_TOKEN }}" --upload-file $file -vvv
+            done
+
+        
+
