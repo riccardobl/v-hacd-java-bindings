@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-set -o xtrace
+# set -o xtrace
 
 if [ "$VERSION" = "" -a "$GITHUB_REF" != "" ];
 then
@@ -175,16 +175,22 @@ function buildWindows64 {
 }
 
 function buildJavaBindings {
+    if [ "$JAVA_HOME" = "" ];
+    then
+        export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+        
+    fi
+    echo "Use JAVA_HOME $JAVA_HOME"
 
     if [ ! -f build/jnaerator.jar ];
     then
         clr_green "Download jnaerator..."
-        wget -q https://codeload.github.com/nativelibs4java/JNAerator/zip/ac73c9e491b7211f2e1278fb4a7c6cedd46f0cf5 -O build/tmp/jnaerator.zip
+        wget -q https://github.com/riccardobl/JNAerator/archive/refs/heads/master.zip -O build/tmp/jnaerator.zip
         mkdir -p build/tmp/jnaerator-ext
         unzip -q build/tmp/jnaerator.zip -d build/tmp/jnaerator-ext/      
         cd build/tmp/jnaerator-ext/*/   
         clr_green "Build jnaerator..."
-        mvn -DskipTests -q clean install  -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
+        mvn -DskipTests -q clean install  -Dmaven.javadoc.skip=true -Dmaven.compiler.source=1.7 -Dmaven.compiler.target=1.7
         cp jnaerator/target/jnaerator-*-shaded.jar ../../../jnaerator.jar
         cd ../../../../
     fi
