@@ -39,14 +39,16 @@ Results are stored in: `build/tests` and `build/release`
 
 ## Gradle
 ```
-repositories { 
-    maven { 
-        url "http://dl.bintray.com/riccardo/v-hacd" 
-    } 
+plugins {
+    id "io.github.0ffz.github-packages" version "1.2.1"
+}
+
+repositories {
+    maven githubPackage.invoke("riccardobl")
 }
 
 dependencies {
-    compile "vhacd:vhacd-native:${version}"
+    compile 'vhacd:vhacd-native:${version}'
 }
 
 ```
